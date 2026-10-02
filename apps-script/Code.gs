@@ -1,30 +1,12 @@
 const LIMIT = 200;
 const DEFAULT_ROOT_FOLDER_ID = "1chVqAXwmi-lDIRuQuwTebpDIRXT-O_aQ";
 function setup() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = SpreadsheetApp.openById('1i9dwwYMbeUD40XT2ykHrO4tGhXDFtgcO60ugCyST8BA');
   const props = PropertiesService.getScriptProperties();
-  let root;
-  if (props.getProperty('ROOT_FOLDER_ID')) root = DriveApp.getFolderById(props.getProperty('ROOT_FOLDER_ID'));
-  else { root = DriveApp.getFolderById(DEFAULT_ROOT_FOLDER_ID); props.setProperty('ROOT_FOLDER_ID', root.getId()); }
-  props.setProperty('SPREADSHEET_ID', sheet.getId());
-  DriveApp.getFileById(sheet.getId()).moveTo(root);
-  const schemas = {
-    Pages: ['slug','title','folder','published','spaceAbove'],
-    Works: ['id','page','title','folder','video','coverUrl','description','published'],
-    Home: ['title','workId','imageUrl','published']
-  };
-  for (const [name,headers] of Object.entries(schemas)) {
-    const tab = sheet.getSheetByName(name) || sheet.insertSheet(name);
-    if (!tab.getLastRow()) { tab.appendRow(headers); tab.setFrozenRows(1); tab.getRange(1,1,1,headers.length).setFontWeight('bold'); }
-  }
-  const pages = sheet.getSheetByName('Pages');
-  if (pages.getLastRow() === 1) {
-    const events = root.createFolder('Events');
-    events.createFolder('Test photoshoot');
-    pages.appendRow(['events','Events',events.getUrl(),true,false]);
-  }
-  Logger.log('Root folder: ' + root.getUrl());
-  Logger.log('Spreadsheet: ' + sheet.getUrl());
+  props.setProperties({ROOT_FOLDER_ID: DEFAULT_ROOT_FOLDER_ID, SPREADSHEET_ID: sheet.getId()});
+  DriveApp.getFolderById(DEFAULT_ROOT_FOLDER_ID).getName();
+  for (const name of ['Pages','Works','Home']) if (!sheet.getSheetByName(name)) throw new Error('Missing tab: '+name);
+  Logger.log('CMS connected: ' + sheet.getUrl());
 }
 function rows(name) {
   const sheet = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID')).getSheetByName(name);
@@ -102,3 +84,5 @@ function doGet(e) {
   const json=JSON.stringify(value);
   return ContentService.createTextOutput(callback?callback+'('+json+');':json).setMimeType(callback?ContentService.MimeType.JAVASCRIPT:ContentService.MimeType.JSON);
 }
+
+

@@ -1,1 +1,11 @@
-{"timeZone":"Europe/Moscow","runtimeVersion":"V8","exceptionLogging":"STACKDRIVER","oauthScopes":["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive"]}
+{
+  "exceptionLogging": "STACKDRIVER",
+  "dependencies": {},
+  "timeZone": "Europe/Moscow",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/spreadsheets"
+  ]
+}
+

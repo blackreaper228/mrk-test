@@ -4,9 +4,9 @@ A separate, tiny portfolio test. No Three.js, 3D models, build tools or Pages CM
 
 ## One-time Google setup
 
-1. Create a new Google spreadsheet named **MRK Test CMS**.
-2. Open **Extensions → Apps Script**. Replace Code.gs with `apps-script/Code.gs` from this repository.
-3. Run `setup` and authorize it with the Google account owning the content. It uses the supplied Drive folder, moves the spreadsheet into it and adds three tabs. For an existing root folder, set Script Property `ROOT_FOLDER_ID` to its ID before running setup.
+1. Open the existing [mrk's admin panel](https://docs.google.com/spreadsheets/d/1i9dwwYMbeUD40XT2ykHrO4tGhXDFtgcO60ugCyST8BA/edit). Its tabs are Pages, Works and Home, with headers matching the schemas below.
+2. Open **Extensions → Apps Script**. The bound **MRK Test CMS** project contains `apps-script/Code.gs` and the explicit permissions from `apps-script/appsscript.json`.
+3. Run `setup` and authorize it with the Google account owning the content. It records the supplied Drive root and spreadsheet ID. It does not move files, create folders or edit cells. Drive access is read-only; SpreadsheetApp requires the broader Sheets scope, although this code only reads cells.
 4. Add only test/public website content to this folder. Originals remain private on Drive, but the deployed endpoint serves photos from published rows to everyone.
 5. **Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone**. Authorize and copy the `/exec` URL. Do not use `/dev`.
 6. Open `setup.html` on the site and paste the URL for a local browser test. To connect for all visitors, put it in `config.json` as `endpoint` and commit.
@@ -49,3 +49,4 @@ Columns: `title`, `workId`, `imageUrl`, `published`. `workId` points to an expli
 
 [Apps Script web apps](https://developers.google.com/apps-script/guides/web)
 [Read-only JSONP via Content Service](https://developers.google.com/apps-script/guides/content)
+
