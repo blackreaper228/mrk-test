@@ -36,6 +36,7 @@ Columns: `title`, `workId`, `imageUrl`, `published`. `workId` points to an expli
 
 - Only pages marked published and works belonging to them are served. The endpoint will not read an arbitrary folder supplied by a site visitor.
 - This is a basic integration test, not an optimized production image CDN. Small photos are delivered as base64 through Apps Script; originals over 6 MiB use the smaller Drive thumbnail. Many large photos may load slowly or hit Apps Script quotas. A production version should resize/cache images outside request handling.
+- Browser requests use fetch with credentials omitted, so Google login cookies and multiple signed-in accounts are not sent to the public endpoint.
 - Each image request currently rescans published folders. No polling or hidden background sync: reload to see spreadsheet/Drive changes.
 - Never place credentials or confidential text in published rows.
 - Google Workspace accounts may prohibit public web apps. Deployment permissions must be granted in Google by the owner.
@@ -49,4 +50,5 @@ Columns: `title`, `workId`, `imageUrl`, `published`. `workId` points to an expli
 
 [Apps Script web apps](https://developers.google.com/apps-script/guides/web)
 [Read-only JSONP via Content Service](https://developers.google.com/apps-script/guides/content)
+
 
