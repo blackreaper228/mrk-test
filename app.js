@@ -1,17 +1,6 @@
 const $=s=>document.querySelector(s),status=$('#status');
-let data,endpoint,sequence=0,viewerImages=[],viewerIndex=0;
-const imageCache=new Map();
-async function rpc(params={}) {
-  const url=new URL(endpoint);
-  Object.entries(params).forEach(([key,value])=>url.searchParams.set(key,value));
-  // Anonymous requests never inherit a visitor's Google account or account-index redirect.
-  const response=await fetch(url.href,{credentials:'omit',mode:'cors',redirect:'follow',signal:AbortSignal.timeout(60000)});
-  if(!response.ok)throw new Error('Google content returned HTTP '+response.status);
-  const value=await response.json();
-  if(value.error)throw new Error(value.error);
-  return value;
-}
-function imageURL(image){if(image.url)return Promise.resolve(image.url);if(!imageCache.has(image.id))imageCache.set(image.id,rpc({action:'image',id:image.id}).then(file=>'data:'+file.mime+';base64,'+file.base64));return imageCache.get(image.id)}
+let data,viewerImages=[],viewerIndex=0;
+function imageURL(image){return Promise.resolve(image.url)}
 const observer=new IntersectionObserver(entries=>entries.forEach(({target,isIntersecting})=>{if(!isIntersecting)return;observer.unobserve(target);imageURL(target._image).then(url=>target.src=url).catch(e=>{console.warn(e);target.alt='Image unavailable'})}),{rootMargin:'300px'});
 function photo(image,title){const img=document.createElement('img');img.alt=title;img._image=image;img.width=396;img.height=496;observer.observe(img);return img}
 function link(title,hash){const a=document.createElement('a');a.textContent=title;a.href=hash;return a}
@@ -19,5 +8,4 @@ function mediaVideo(value){const url=new URL(value);if(!['https:','http:'].inclu
 function render(){observer.disconnect();const content=$('#content');content.replaceChildren();const params=new URLSearchParams(location.hash.slice(1)),page=params.get('page'),work=params.get('work');$('#menu').replaceChildren(...data.pages.map(p=>{const a=link(p.title,'#page='+encodeURIComponent(p.slug));if(p.spaceAbove)a.className='space';if(p.slug===page)a.setAttribute('aria-current','page');return a}));const selected=work?data.works.find(w=>w.id===work):null;const heading=document.createElement('h1');heading.textContent=selected?.title||data.pages.find(p=>p.slug===page)?.title||'Selected works';content.append(heading);const grid=document.createElement('div');grid.className='grid';content.append(grid);if(work&&!selected){heading.textContent='Page not found';return}if(selected){content.insertBefore(link('← Back to gallery','#page='+encodeURIComponent(selected.page)),heading);const desc=document.createElement('p');desc.textContent=selected.description||'';heading.after(desc);viewerImages=selected.images;selected.images.forEach((image,index)=>{const button=document.createElement('button');button.className='card';button.append(photo(image,selected.title));button.onclick=()=>{viewerIndex=index;showViewer();$('#viewer').showModal()};grid.append(button)});if(selected.video)try{grid.append(mediaVideo(selected.video))}catch(e){console.warn(e)}return}const records=page?data.works.filter(w=>w.page===page):data.home.length?data.home:data.works;records.forEach(w=>{const a=link('','#work='+encodeURIComponent(w.id||w.workId));a.className='card';const label=document.createElement('h2');label.textContent=w.title;a.append(label);const cover=w.cover||w.images?.[0];if(cover)a.append(photo(cover,w.title));else{const blank=document.createElement('div');blank.className='placeholder';a.append(blank)}grid.append(a)})}
 async function showViewer(){const image=viewerImages[viewerIndex];if(!image)return;$('#viewer img').removeAttribute('src');try{$('#viewer img').src=await imageURL(image)}catch(e){console.warn(e)}}
 $('#close').onclick=()=>$('#viewer').close();$('#prev').onclick=()=>{viewerIndex=(viewerIndex-1+viewerImages.length)%viewerImages.length;showViewer()};$('#next').onclick=()=>{viewerIndex=(viewerIndex+1)%viewerImages.length;showViewer()};$('#viewer').onclick=e=>{if(e.target===$('#viewer'))$('#viewer').close()};document.addEventListener('keydown',e=>{if(!$('#viewer').open)return;if(e.key==='ArrowLeft')$('#prev').click();if(e.key==='ArrowRight')$('#next').click()});window.addEventListener('hashchange',()=>{if(data)render()});
-try{const config=await fetch('config.json',{cache:'no-store'}).then(r=>r.json());endpoint=localStorage.getItem('mrk-test-endpoint')||config.endpoint;if(endpoint&&!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(endpoint))throw new Error('Invalid endpoint');data=endpoint?await rpc():await fetch('demo.json').then(r=>r.json());status.textContent=endpoint?'':'Demo mode — connect Google Sheets using Setup below.';render()}catch(error){status.textContent='Unable to load content. Check the Google connection in Setup.';console.error(error)}
-
+try{const response=await fetch('content/site.json',{cache:'no-store'});if(!response.ok)throw new Error('Content returned HTTP '+response.status);data=await response.json();status.textContent='';render()}catch(error){status.textContent='Content is temporarily unavailable.';console.error(error)}

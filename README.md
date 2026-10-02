@@ -1,54 +1,51 @@
-# MRK Test — Google Sheets + Drive CMS
+# MRK Test — Google Sheets / Drive → GitHub Pages
 
-A separate, tiny portfolio test. No Three.js, 3D models, build tools or Pages CMS dependency. Google Sheets is the editor; Google Drive holds photos. Google Apps Script provides a public, read-only content endpoint. No Google API key required.
+Google Sheets is the CMS and Google Drive stores the originals. GitHub Actions downloads published content, optimizes images to WebP (maximum 2048px, quality 85), commits a snapshot to `content/`, and publishes the website. Visitors read only GitHub Pages files; no Google account or live Google API request is required.
 
-## One-time Google setup
+## Editing
 
-1. Open the existing [mrk's admin panel](https://docs.google.com/spreadsheets/d/1i9dwwYMbeUD40XT2ykHrO4tGhXDFtgcO60ugCyST8BA/edit). Its tabs are Pages, Works and Home, with headers matching the schemas below.
-2. Open **Extensions → Apps Script**. The bound **MRK Test CMS** project contains `apps-script/Code.gs` and the explicit permissions from `apps-script/appsscript.json`.
-3. Run `setup` and authorize it with the Google account owning the content. It records the supplied Drive root and spreadsheet ID. It does not move files, create folders or edit cells. Drive access is read-only; SpreadsheetApp requires the broader Sheets scope, although this code only reads cells.
-4. Add only test/public website content to this folder. Originals remain private on Drive, but the deployed endpoint serves photos from published rows to everyone.
-5. **Deploy → New deployment → Web app → Execute as: Me → Who has access: Anyone**. Authorize and copy the `/exec` URL. Do not use `/dev`.
-6. Open `setup.html` on the site and paste the URL for a local browser test. To connect for all visitors, put it in `config.json` as `endpoint` and commit.
-7. Configure GitHub Pages: **Settings → Pages → Deploy from a branch → main → /(root)**.
-
-## Edit the site
+[Open the admin spreadsheet](https://docs.google.com/spreadsheets/d/1i9dwwYMbeUD40XT2ykHrO4tGhXDFtgcO60ugCyST8BA/edit).
 
 ### Pages
 
 Columns: `slug`, `title`, `folder`, `published`, `spaceAbove`.
 
-Add one row per page, e.g. `photography | Photography | [Drive folder URL] | TRUE | TRUE`.
-`slug` must be unique, lower-case ASCII with hyphens. Set `published` to TRUE to show the page. `spaceAbove` separates that menu item. The page appears with no Git commit; reload the site.
+Add a row with a unique lowercase slug (e.g. `concerts`), menu title, Drive folder URL, and `published=TRUE`. Standard checkboxes work for both boolean fields. All folders must be inside [MRK Test](https://drive.google.com/drive/folders/1chVqAXwmi-lDIRuQuwTebpDIRXT-O_aQ).
 
-Upload a whole photoshoot folder inside the page's folder. Each immediate subfolder automatically becomes a photoshoot. The folder name becomes its title; JPEG/PNG/WebP files become gallery images sorted by filename. Photos directly in the page folder become an additional photoshoot. Maximum 200 images per photoshoot. Subfolders within photoshoots are not scanned recursively.
+Each immediate subfolder becomes a photoshoot using its folder name as title. Photos directly in the page folder form an additional album. Images are sorted by filename; up to 200 images per photoshoot. Photoshoot subfolders are not recursively scanned.
 
-### Works (optional manual control)
+### Works (optional)
 
 Columns: `id`, `page`, `title`, `folder`, `video`, `coverUrl`, `description`, `published`.
-`page` refers to a Pages slug. `id` is unique and permanent. `folder` points to a photoshoot folder within MRK Test. Use `video` for Vimeo, YouTube or a direct MP4 URL. `coverUrl` is optional. An explicit row overrides automatic discovery of that folder. Use this tab to rename a photoshoot without renaming the Drive folder or to add videos.
 
-### Home
+Use a unique permanent `id`, a Pages slug in `page`, and a folder within MRK Test. Explicit rows override automatic discovery of the same folder. `video` accepts Vimeo, YouTube or MP4 links. Video players remain external embeds; videos are not copied into Git. `coverUrl` overrides the first photo (HTTPS image URLs only).
 
-Columns: `title`, `workId`, `imageUrl`, `published`. `workId` points to an explicit Works ID (automatic IDs can be copied from the endpoint JSON). If this tab has no published valid rows, the homepage shows all works. `imageUrl` overrides the cover.
+### Home (optional)
 
-## Notes
+Columns: `title`, `workId`, `imageUrl`, `published`.
 
-- Only pages marked published and works belonging to them are served. The endpoint will not read an arbitrary folder supplied by a site visitor.
-- This is a basic integration test, not an optimized production image CDN. Small photos are delivered as base64 through Apps Script; originals over 6 MiB use the smaller Drive thumbnail. Many large photos may load slowly or hit Apps Script quotas. A production version should resize/cache images outside request handling.
-- Browser requests use fetch with credentials omitted, so Google login cookies and multiple signed-in accounts are not sent to the public endpoint.
-- Each image request currently rescans published folders. No polling or hidden background sync: reload to see spreadsheet/Drive changes.
-- Never place credentials or confidential text in published rows.
-- Google Workspace accounts may prohibit public web apps. Deployment permissions must be granted in Google by the owner.
-- `config.json` has no endpoint initially; the site clearly displays demo mode until connected.
+`workId` references a work ID from `content/site.json`. With no valid published Home rows, all works appear on the homepage.
 
-## Local preview
+## Publication
 
-`python -m http.server 4174 --bind 127.0.0.1`
+The workflow **Sync Google content and publish** runs approximately every 15 minutes. GitHub may delay scheduled jobs; the interval is not a delivery guarantee. After a successful publication, reload the site to see changes.
 
-## References
+For immediate publication, open [GitHub Actions](https://github.com/blackreaper228/mrk-test/actions/workflows/publish.yml), click **Run workflow**, choose `main`, and run it. This requires repository write access. There is no Publish button in the spreadsheet yet.
 
-[Apps Script web apps](https://developers.google.com/apps-script/guides/web)
-[Read-only JSONP via Content Service](https://developers.google.com/apps-script/guides/content)
+The workflow also publishes changes pushed to `main`. It commits content only when the snapshot changes and skips scheduled deployments when nothing changed. Failed Google downloads leave the previously deployed website intact. GitHub Pages uses the **GitHub Actions** deployment source, not branch builds.
 
+The public Apps Script endpoint in `config.json` is used only by the synchronization script. It serves only published content within the configured Drive root. Do not publish private content. Originals remain unchanged on Drive. Large originals above 6 MiB currently use Drive thumbnails through the existing endpoint.
 
+Standard GitHub-hosted runners are free for this public repository. Only standard Ubuntu runners are used, with no paid services or persistent Actions cache. The Pages artifact has one-day retention. Keep the test gallery small: repository size, Pages bandwidth and Google quotas still apply. Scheduled workflows in inactive public repositories may be disabled after 60 days without repository activity.
+
+## Local checks
+
+```text
+pip install -r requirements.txt
+python -m unittest discover -s tests -p 'test_*.py'
+node tests/backend.test.cjs
+python scripts/sync_content.py
+python -m http.server 4174 --bind 127.0.0.1
+```
+
+The existing Apps Script remains bound to the admin spreadsheet. Its source is in `apps-script/`; the deployed read-only endpoint continues to use the configured Google account to read Sheets and Drive. No additional API keys or credentials are needed for the workflow beyond GitHub's built-in repository token.

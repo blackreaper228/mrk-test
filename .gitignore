@@ -1,1 +1,4 @@
 *.log
+.sync-*/
+__pycache__/
+_site/

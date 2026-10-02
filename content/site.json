@@ -1,0 +1,53 @@
+{
+  "pages": [
+    {
+      "slug": "photography",
+      "title": "Photography",
+      "spaceAbove": false
+    },
+    {
+      "slug": "concerts",
+      "title": "Concerts",
+      "spaceAbove": false
+    }
+  ],
+  "works": [
+    {
+      "id": "photography-1NXeSibeFOHap_0vYwNA6OguczoSD3ooo",
+      "page": "photography",
+      "title": "Photography",
+      "description": "",
+      "images": [
+        {
+          "url": "content/media/092715cd3056df4f8409dc90.webp"
+        },
+        {
+          "url": "content/media/2d1dd28f2b9d30e230cd99fa.webp"
+        }
+      ],
+      "cover": {
+        "url": "content/media/092715cd3056df4f8409dc90.webp"
+      },
+      "video": ""
+    },
+    {
+      "id": "concerts-1NXeSibeFOHap_0vYwNA6OguczoSD3ooo",
+      "page": "concerts",
+      "title": "Concerts",
+      "description": "",
+      "images": [
+        {
+          "url": "content/media/092715cd3056df4f8409dc90.webp"
+        },
+        {
+          "url": "content/media/2d1dd28f2b9d30e230cd99fa.webp"
+        }
+      ],
+      "cover": {
+        "url": "content/media/092715cd3056df4f8409dc90.webp"
+      },
+      "video": ""
+    }
+  ],
+  "home": []
+}

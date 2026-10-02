@@ -1,0 +1,65 @@
+name: Sync Google content and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+
+concurrency:
+  group: mrk-test-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Test synchronization
+        run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Download and optimize published Google content
+        run: python scripts/sync_content.py
+      - name: Commit updated content
+        id: snapshot
+        run: |
+          git add content
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Synchronize published Google content'
+            git push origin HEAD:main
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare website
+        if: github.event_name != 'schedule' || steps.snapshot.outputs.changed == 'true'
+        run: |
+          mkdir -p _site
+          cp index.html app.js style.css setup.html _site/
+          cp -R content _site/content
+      - uses: actions/configure-pages@v5
+        if: github.event_name != 'schedule' || steps.snapshot.outputs.changed == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'schedule' || steps.snapshot.outputs.changed == 'true'
+        with:
+          path: _site
+          retention-days: 1
+      - uses: actions/deploy-pages@v4
+        if: github.event_name != 'schedule' || steps.snapshot.outputs.changed == 'true'
+        id: deploy
