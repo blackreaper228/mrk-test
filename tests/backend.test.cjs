@@ -1,0 +1,11 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const iterator=arr=>{let i=0;return{hasNext:()=>i<arr.length,next:()=>arr[i++]}};
+const root={getId:()=> 'root',getParents:()=>iterator([])};
+const file={getId:()=> 'photo',getName:()=> '02.jpg',getMimeType:()=> 'image/jpeg'};
+const album={getId:()=> 'albumfolder',getParents:()=>iterator([root]),getName:()=> 'Session',getFiles:()=>iterator([file])};
+const pageFolder={getId:()=> 'pagefolder',getParents:()=>iterator([root]),getFolders:()=>iterator([album]),getFiles:()=>iterator([])};
+const tables={Pages:[['slug','title','folder','published','spaceAbove'],['events','Events','https://drive.google.com/drive/folders/pagefolder',true,false],['hidden','Hidden','',false,false]],Works:[['id','page','title','folder','published']],Home:[['title','workId','published']]};
+const context={console,PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==='ROOT_FOLDER_ID'?'root':'sheet'})},SpreadsheetApp:{openById:()=>({getSheetByName:name=>({getLastRow:()=>tables[name].length,getDataRange:()=>({getValues:()=>tables[name].map(r=>[...r])})})})},DriveApp:{getFolderById:id=>({pagefolder:pageFolder,albumfolder:album})[id]}};
+vm.createContext(context);vm.runInContext(fs.readFileSync('apps-script/Code.gs','utf8'),context);
+const data=context.website();assert.equal(data.pages.length,1);assert.equal(data.works.length,1);assert.equal(data.works[0].images[0].id,'photo');assert.equal(data.works[0].title,'Session');assert.equal(context.insideRoot({getId:()=> 'outside',getParents:()=>iterator([])}),false);
+assert.throws(()=>context.folderId('bad'));console.log('Published page, automatic folder album, image listing, root boundary tests passed.');

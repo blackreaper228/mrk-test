@@ -1,0 +1,38 @@
+{
+  "pages": [
+    {
+      "slug": "events",
+      "title": "Events",
+      "published": true
+    },
+    {
+      "slug": "photography",
+      "title": "Photography",
+      "published": true
+    }
+  ],
+  "works": [
+    {
+      "id": "sample",
+      "page": "photography",
+      "title": "Test photoshoot",
+      "description": "Connect Google to replace this demo.",
+      "images": [
+        {
+          "url": "assets/demo-0.svg"
+        },
+        {
+          "url": "assets/demo-1.svg"
+        },
+        {
+          "url": "assets/demo-2.svg"
+        },
+        {
+          "url": "assets/demo-3.svg"
+        }
+      ],
+      "video": ""
+    }
+  ],
+  "home": []
+}
